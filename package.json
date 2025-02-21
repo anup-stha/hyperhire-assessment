@@ -1,0 +1,17 @@
+{
+  "name": "hyperhire-assessment",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "build": "pnpm run --parallel build",
+    "start": "pnpm run --parallel start",
+    "lint": "pnpm run --parallel lint"
+  },
+  "dependencies": {
+    "@radix-ui/react-collapsible": "^1.1.3"
+  }
+}

@@ -1,0 +1,25 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies first (better layer caching)
+COPY package*.json ./
+RUN npm install
+
+# Copy the rest of the application
+COPY . .
+
+# Generate Prisma client
+RUN npx prisma generate
+
+# Create dist directory and set permissions
+RUN mkdir -p dist && chown -R node:node .
+
+# Switch to non-root user
+USER node
+
+# Expose port
+EXPOSE 4000
+
+# Start development server
+CMD ["npm", "run", "start:dev"] 
