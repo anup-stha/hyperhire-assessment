@@ -22,6 +22,8 @@ const navigation = [
   { name: "Competition", href: "#", icon: Trophy },
 ];
 
+console.log(navigation,"navigation")
+
 export function Sidebar() {
   return (
     <div className="flex w-60 flex-col bg-slate-900 rounded-xl">
