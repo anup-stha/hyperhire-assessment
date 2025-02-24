@@ -16,6 +16,7 @@ interface MenuState {
   selectedItem: MenuItem | null;
   loading: boolean;
   error: string | null;
+  expandedItems: string[];
 }
 
 const initialState: MenuState = {
@@ -23,6 +24,7 @@ const initialState: MenuState = {
   selectedItem: null,
   loading: false,
   error: null,
+  expandedItems: [],
 };
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -144,6 +146,37 @@ export const menuSlice = createSlice({
     setSelectedItem: (state, action: PayloadAction<MenuItem | null>) => {
       state.selectedItem = action.payload;
     },
+    setItemExpanded: (
+      state,
+      action: PayloadAction<{ id: string; expanded: boolean }>
+    ) => {
+      if (action.payload.expanded) {
+        if (!state.expandedItems.includes(action.payload.id)) {
+          state.expandedItems.push(action.payload.id);
+        }
+      } else {
+        state.expandedItems = state.expandedItems.filter(
+          (id) => id !== action.payload.id
+        );
+      }
+    },
+    setAllExpanded: (state, action: PayloadAction<boolean>) => {
+      if (action.payload) {
+        const allIds: string[] = [];
+        const collectIds = (items: MenuItem[]) => {
+          items.forEach((item) => {
+            allIds.push(item.id);
+            if (item.children?.length) {
+              collectIds(item.children);
+            }
+          });
+        };
+        collectIds(state.items);
+        state.expandedItems = allIds;
+      } else {
+        state.expandedItems = [];
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -232,5 +265,6 @@ export const menuSlice = createSlice({
   },
 });
 
-export const { setSelectedItem } = menuSlice.actions;
+export const { setSelectedItem, setItemExpanded, setAllExpanded } =
+  menuSlice.actions;
 export default menuSlice.reducer;
