@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChevronRight, Plus } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -30,18 +30,31 @@ interface TreeItemProps {
   item: MenuItem;
   level?: number;
   isLastChild?: boolean;
+  isExpanded?: boolean;
 }
 
-function TreeItem({ item, level = 0, isLastChild = false }: TreeItemProps) {
+function TreeItem({
+  item,
+  level = 0,
+  isLastChild = false,
+  isExpanded = true,
+}: TreeItemProps) {
   const dispatch = useDispatch<AppDispatch>();
   const hasChildren = item.children && item.children.length > 0;
+  const [isOpen, setIsOpen] = useState(isExpanded);
+
+  useEffect(() => {
+    setIsOpen(isExpanded);
+  }, [isExpanded]);
 
   const handleAddItem = async () => {
     try {
       await dispatch(
         addMenuItem({ name: "New Item", parentId: item.id })
       ).unwrap();
+      setIsOpen(true); // Ensure parent stays open after adding
       dispatch(fetchMenus());
+      setIsOpen(true);
     } catch (error) {
       console.error("Failed to add menu item:", error);
     }
@@ -70,19 +83,19 @@ function TreeItem({ item, level = 0, isLastChild = false }: TreeItemProps) {
           />
         </>
       )}
-      <Collapsible>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div
           className={cn(
-            "group flex items-center cursor-pointer min-h-[32px]",
+            "group flex items-center cursor-pointer min-h-[32px] rounded-md",
             "data-[state=open]:bg-muted/50"
           )}
           style={{ paddingLeft: `${level * 24 + 20}px` }}
           onClick={() => dispatch(setSelectedItem(item))}
         >
-          <div className="w-full flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {hasChildren ? (
               <CollapsibleTrigger asChild>
-                <button className="h-6 w-6 bg-white z-20 flex items-center justify-center data-[state=open]:rotate-90 transition-transform">
+                <button className="h-6 w-6 bg-white z-20 flex items-center justify-center data-[state=open]:rotate-90 transition-transform rounded-sm ">
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </CollapsibleTrigger>
@@ -93,13 +106,13 @@ function TreeItem({ item, level = 0, isLastChild = false }: TreeItemProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100 ml-2"
+              className="h-7 w-7  bg-[#253BFF] hover:bg-[#253BFF] flex-shrink-0 opacity-0 group-hover:opacity-100 ml-2"
               onClick={(e) => {
                 e.stopPropagation();
                 handleAddItem();
               }}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 text-white" />
             </Button>
           </div>
         </div>
@@ -111,6 +124,7 @@ function TreeItem({ item, level = 0, isLastChild = false }: TreeItemProps) {
                 item={child}
                 level={level + 1}
                 isLastChild={index === item.children.length - 1}
+                isExpanded={isExpanded}
               />
             ))}
           </CollapsibleContent>
@@ -126,14 +140,11 @@ interface TreeViewProps {
 }
 
 export function TreeView({ selectedRootId, onRootChange }: TreeViewProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
   const dispatch = useDispatch<AppDispatch>();
   const { items, loading, error } = useSelector(
     (state: RootState) => state.menu
   );
-
-  useEffect(() => {
-    dispatch(fetchMenus());
-  }, [dispatch]);
 
   const handleRootChange = (value: string) => {
     onRootChange(value);
@@ -155,12 +166,12 @@ export function TreeView({ selectedRootId, onRootChange }: TreeViewProps) {
   const filteredItems = selectedRoot ? [selectedRoot] : [];
 
   return (
-    <div className="rounded-lg border bg-card">
-      <div className="space-y-4 p-4">
+    <div>
+      <div className="space-y-8">
         <div>
-          <p className="mb-2 text-sm font-medium">Menu</p>
+          <p className="mb-1 text-sm text-slate-600">Menu</p>
           <Select value={selectedRootId} onValueChange={handleRootChange}>
-            <SelectTrigger className="w-[300px]">
+            <SelectTrigger className="lg:min-w-[400px] max-w-[400px]">
               <SelectValue placeholder="Select menu" />
             </SelectTrigger>
             <SelectContent>
@@ -171,11 +182,23 @@ export function TreeView({ selectedRootId, onRootChange }: TreeViewProps) {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex gap-2 mt-8">
+            <Button size="lg" onClick={() => setIsExpanded(true)}>
+              Expand All
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => setIsExpanded(false)}
+            >
+              Collapse All
+            </Button>
+          </div>
         </div>
 
-        <div className="min-h-[400px]">
+        <div className="-ml-[20px]">
           {filteredItems.map((item) => (
-            <TreeItem key={item.id} item={item} />
+            <TreeItem key={item.id} item={item} isExpanded={isExpanded} />
           ))}
         </div>
       </div>

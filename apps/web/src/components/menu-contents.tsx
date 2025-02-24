@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Grid3x3, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,9 @@ import {
   updateMenuItem,
   addMenuItem,
   fetchMenus,
+  MenuItem,
 } from "@/store/menu/menuSlice";
+import { toggleSidebar } from "@/store/sidebar/sidebarSlice";
 
 export function MenuContents() {
   const dispatch = useDispatch<AppDispatch>();
@@ -63,7 +65,7 @@ export function MenuContents() {
   // Function to get all possible parent items
   const getParentOptions = () => {
     const options: { id: string; name: string }[] = [];
-    const traverse = (items: any[], depth = 0) => {
+    const traverse = (items: MenuItem[], depth = 0) => {
       items.forEach((item) => {
         if (item.id !== selectedItem?.id) {
           // Prevent item from being its own parent
@@ -99,10 +101,12 @@ export function MenuContents() {
     try {
       await dispatch(
         addMenuItem({
-          name: "New Root Menu",
-          parentId: undefined, // No parent for root menu
+          name: formData.name || "New Root Menu",
+          parentId: undefined,
         })
       ).unwrap();
+      // Reset form data after adding
+      setFormData({ name: "", depth: 0, parentId: "" });
       // Refresh menus after adding
       dispatch(fetchMenus());
     } catch (error) {
@@ -113,25 +117,43 @@ export function MenuContents() {
   const renderForm = () => {
     if (!selectedItem) {
       return (
-        <div className="space-y-6 rounded-lg border bg-muted/50 p-4">
+        <div className="space-y-6 rounded-lg border bg-muted/50 p-4 lg:min-w-[400px] max-w-[400px]">
           <p className="text-sm text-muted-foreground mb-4">
             Select a menu item to edit or create a root menu
           </p>
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={handleAddRoot}
-            variant="outline"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Root Menu
-          </Button>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium" htmlFor="rootMenuName">
+                Root Menu Name
+              </label>
+              <Input
+                id="rootMenuName"
+                className="mt-1"
+                placeholder="Enter root menu name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+              />
+            </div>
+
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={handleAddRoot}
+              variant="outline"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Root Menu
+            </Button>
+          </div>
         </div>
       );
     }
 
     return (
-      <div className="space-y-6 rounded-lg border bg-muted/50 p-4">
+      <div className="space-y-6 rounded-lg border bg-muted/50 p-4 w-[400px]">
         <div>
           <label className="text-sm font-medium" htmlFor="menuId">
             Menu ID
@@ -199,14 +221,115 @@ export function MenuContents() {
   };
 
   return (
-    <div className="flex gap-4">
-      <div className="min-h-[500px]">
-        <TreeView
-          selectedRootId={selectedRootId}
-          onRootChange={setSelectedRootId}
-        />
+    <div className="p-6 flex flex-col gap-8">
+      <div className="flex flex-col  gap-8">
+        <button
+          onClick={() => dispatch(toggleSidebar())}
+          className="lg:hidden block"
+        >
+          <SidebarOpen />
+        </button>
+        <div className="flex items-center gap-1">
+          <Folder />
+          <span className="text-slate-300">/</span>
+          <h1 className="text-sm font-medium text-slate-700">Menus</h1>
+        </div>
       </div>
-      <div>{renderForm()}</div>
+
+      <div className="flex items-center gap-2">
+        <Icon />
+        <h1 className="text-3xl text-slate-900 font-semibold">Menus</h1>
+      </div>
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="h-full">
+          <TreeView
+            selectedRootId={selectedRootId}
+            onRootChange={setSelectedRootId}
+          />
+        </div>
+        <div>{renderForm()}</div>
+      </div>
     </div>
   );
 }
+
+const SidebarOpen = () => {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M4 7H12.5M4 12H14.5M4 17H12.5"
+        stroke="black"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M16.5 8.5L20 12L16.5 15.5"
+        stroke="black"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+  );
+};
+
+const Folder = () => {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M22 19C22 19.5304 21.7893 20.0391 21.4142 20.4142C21.0391 20.7893 20.5304 21 20 21H4C3.46957 21 2.96086 20.7893 2.58579 20.4142C2.21071 20.0391 2 19.5304 2 19V5C2 4.46957 2.21071 3.96086 2.58579 3.58579C2.96086 3.21071 3.46957 3 4 3H9L11 6H20C20.5304 6 21.0391 6.21071 21.4142 6.58579C21.7893 6.96086 22 7.46957 22 8V19Z"
+        fill="#D0D5DD"
+      />
+    </svg>
+  );
+};
+
+const Icon = () => {
+  return (
+    <svg
+      width="52"
+      height="52"
+      viewBox="0 0 52 52"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="26" cy="26" r="26" fill="#253BFF" />
+      <rect
+        x="17.6562"
+        y="17.6699"
+        width="6.69214"
+        height="6.69336"
+        rx="1"
+        fill="white"
+      />
+      <rect
+        x="17.6562"
+        y="27.6523"
+        width="6.69214"
+        height="6.69336"
+        rx="1"
+        fill="white"
+      />
+      <rect
+        x="27.6539"
+        y="27.6523"
+        width="6.69214"
+        height="6.69336"
+        rx="1"
+        fill="white"
+      />
+      <circle cx="30.9871" cy="21.041" r="3.69067" fill="white" />
+    </svg>
+  );
+};
