@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: hyperhire-api
+    env: docker
+    region: singapore
+    plan: free
+    healthCheckPath: /health
+    dockerfilePath: ./apps/api/Dockerfile
+    buildCommand: cd apps/api && npx prisma generate && npx prisma migrate deploy
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hyperhire-db
+          property: connectionString
+          format: postgresql://${username}:${password}@${host}:${port}/${database}?schema=public
+      - key: PORT
+        value: 4000
+
+  - type: web
+    name: hyperhire-web
+    env: docker
+    region: singapore
+    plan: free
+    dockerfilePath: ./apps/web/Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://hyperhire-api-9fnr.onrender.com
+
+databases:
+  - name: hyperhire-db
+    region: singapore
+    plan: free
